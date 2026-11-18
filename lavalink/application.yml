@@ -1,0 +1,48 @@
+# Lavalink v4 — WolfRadio only plays direct audio URLs (library, Jamendo, previews, radio).
+# Every platform source is switched off on purpose.
+server:
+  port: 2333
+  address: 0.0.0.0
+
+lavalink:
+  server:
+    # Overridden by the LAVALINK_SERVER_PASSWORD environment variable in docker-compose
+    password: "change-me"
+    sources:
+      youtube: false
+      bandcamp: false
+      soundcloud: false
+      twitch: false
+      vimeo: false
+      nico: false
+      http: true
+      local: false
+    filters:
+      volume: true
+      equalizer: true
+      karaoke: true
+      timescale: true
+      tremolo: true
+      vibrato: true
+      distortion: true
+      rotation: true
+      channelMix: true
+      lowPass: true
+    bufferDurationMs: 400
+    frameBufferDurationMs: 5000
+    opusEncodingQuality: 10
+    # LOW keeps CPU usage reasonable on a Raspberry Pi
+    resamplingQuality: LOW
+    trackStuckThresholdMs: 10000
+    useSeekGhosting: true
+    playerUpdateInterval: 5
+    gc-warnings: true
+
+metrics:
+  prometheus:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
+    lavalink: INFO

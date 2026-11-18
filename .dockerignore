@@ -1,0 +1,8 @@
+node_modules
+dist
+data
+music
+.env
+.git
+*.log
+navidrome-data

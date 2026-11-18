@@ -1,0 +1,44 @@
+{
+  "name": "wolfradio",
+  "version": "0.1.0",
+  "description": "Self-hosted Discord music bot: pick-the-right-result search, your own library, Creative Commons music and world radio.",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node --env-file-if-exists=.env dist/index.js",
+    "deploy": "node --env-file-if-exists=.env dist/deploy-commands.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "author": "TexAlphaWolf",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.28.1",
+    "lavalink-client": "^2.11.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TexAlphaWolf/wolfradio.git"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "keywords": [
+    "discord",
+    "discord-bot",
+    "music-bot",
+    "lavalink",
+    "navidrome",
+    "radio",
+    "jamendo"
+  ],
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

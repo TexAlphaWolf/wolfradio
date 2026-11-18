@@ -1,0 +1,39 @@
+services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4
+    restart: unless-stopped
+    environment:
+      LAVALINK_SERVER_PASSWORD: ${LAVALINK_PASSWORD}
+      _JAVA_OPTIONS: -Xmx512m
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
+
+  wolfradio:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      LAVALINK_HOST: lavalink
+      DATA_DIR: /app/data
+    volumes:
+      - ./data:/app/data
+    # Spotify OAuth callback — bound to this computer only
+    ports:
+      - "127.0.0.1:${SPOTIFY_CALLBACK_PORT:-8888}:${SPOTIFY_CALLBACK_PORT:-8888}"
+    # The bot keeps retrying until Lavalink is up, so no health check is needed
+    depends_on:
+      - lavalink
+
+  # Optional: your own music library. Start with `docker compose --profile library up -d`
+  navidrome:
+    image: deluan/navidrome:latest
+    profiles: ["library"]
+    restart: unless-stopped
+    ports:
+      - "4533:4533"
+    environment:
+      ND_SCANSCHEDULE: 1h
+      ND_LOGLEVEL: info
+    volumes:
+      - ./navidrome-data:/data
+      - ${MUSIC_DIR:-./music}:/music:ro
