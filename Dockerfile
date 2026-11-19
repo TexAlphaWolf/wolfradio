@@ -4,6 +4,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY tsconfig.json ./
 COPY src ./src
+COPY activity ./activity
+# Builds the bot (tsc) and the Activity web app (Vite) into dist/
 RUN npm run build
 
 FROM node:24-alpine

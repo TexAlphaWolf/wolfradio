@@ -4,8 +4,13 @@ A self-hosted Discord music bot built for a community server.
 Type a song, **pick the right result from a menu**, and it plays in your server's music channel.
 
 Built with **TypeScript**, **discord.js v14** and **Lavalink v4**, designed to run 24/7 on a Raspberry Pi 5 with Docker.
+Version 2 adds a **Discord Activity**: a web app that opens inside the voice channel, built with React and the Embedded App SDK.
+
+![WolfRadio Activity: karaoke lyrics, queue and controls inside a Discord voice channel](docs/activity.png)
 
 ## Features
+
+- 🖥️ **Activity (V2)** — open WolfRadio inside the voice channel: karaoke-style synced lyrics, cover art, progress, the shared queue, controls and search, with the same DJ rules as the commands
 
 - 🔎 **Search & pick** — `/play` shows up to 25 results in a select menu; nothing plays until you choose
 - 🎯 **One music channel** — each server picks the voice channel WolfRadio plays in with `/setup channel`; the Now Playing card lives in that channel's chat
@@ -131,6 +136,39 @@ everyone else lands on a page that doesn't load — they copy its address and pr
 with the **Open in Spotify** button. Tokens are stored encrypted (AES-256-GCM) in `data/spotify-tokens.json`;
 `/party unlink` deletes them.
 
+### WolfRadio V2: the Activity
+
+The Activity is served by the bot itself (web app + API + WebSocket on `ACTIVITY_PORT`). Discord loads it through its
+own proxy, so the bot needs a public HTTPS address: the `tunnel` service (Cloudflare quick tunnel) provides one.
+
+1. In the [Developer Portal](https://discord.com/developers/applications), open the WolfRadio application:
+   - **OAuth2** → copy the **Client Secret** into `DISCORD_CLIENT_SECRET`, and add the redirect `https://127.0.0.1` (a placeholder the Activity flow requires).
+   - **Installation** → *Installation Contexts*: tick **Guild Install** and **User Install** (the *Install Link* can stay *None*).
+   - **Activities → Settings** → **Enable Activities**. This creates the *Launch* entry point command.
+2. In `.env`: `ENABLE_ACTIVITY=true`, and add `activity` to the profiles, e.g. `COMPOSE_PROFILES=library,activity`.
+3. `docker compose up -d --build`, then find the public address:
+   ```bash
+   docker compose logs tunnel | grep trycloudflare.com
+   ```
+4. **Activities → URL Mappings**: prefix `/`, target the address **without** `https://` (e.g. `quiet-wolf-moon.trycloudflare.com`).
+5. In Discord, join the music channel → **Activities** (rocket icon) → **WolfRadio**.
+
+A quick tunnel gets a new address every time it restarts, so step 4 must be repeated then.
+For a permanent address, use a [named Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) with your own domain.
+
+How it's put together:
+
+```
+Discord client ── iframe ──► {app}.discordsays.com (Discord proxy) ──► tunnel ──► bot :8080
+                                                                           ├── /            React app (Vite build)
+                                                                           ├── /api/token   OAuth code → token + signed session
+                                                                           ├── /api/art     signed artwork proxy (no open proxy, no LAN)
+                                                                           └── /api/ws      live state + controls (same rules as slash commands)
+```
+
+To work on the UI: `npm run dev:activity` (Vite on port 5173, proxying `/api` to the bot), and open
+`http://localhost:5173/?demo` to see it with sample data outside Discord.
+
 ### Run locally for development
 
 Requires Node.js 22.12+ and a running Lavalink v4.
@@ -146,6 +184,7 @@ npm run dev
 ```
 src/
 ├── index.ts               # startup, welcome message, shutdown
+├── activity/              # V2: web server, OAuth, sessions, art proxy, WebSocket, shared protocol
 ├── deploy-commands.ts     # registers slash commands
 ├── config.ts · store.ts   # env config · per-server settings (data/guilds.json)
 ├── commands/              # slash commands (/play, /radio, /party, …)
@@ -153,21 +192,11 @@ src/
 ├── music/                 # Lavalink, queueing, controls, autoplay, lyrics, voice status, embeds
 ├── sources/               # Deezer, Navidrome, Jamendo, radio-browser, LRCLIB, resolver
 └── spotify/               # OAuth, encrypted token store, Web API client, party engine
+activity/                  # V2 web app: React + Vite + Embedded App SDK
 lavalink/application.yml   # Lavalink config (http source only)
 ```
 
 ## Roadmap
-
-### WolfRadio V2 — Discord Activity
-
-An Activity that opens inside the voice channel (like a shared app window) for everyone listening:
-
-- Live synced lyrics, karaoke-style, with the current line highlighted
-- Large album art, progress bar and the shared queue
-- Controls (pause, skip, vote, add songs) for everyone in the channel, with the same DJ rules
-- Built with the Discord Embedded App SDK, talking to the existing bot over a small authenticated API
-
-### Later
 
 - Web player / dashboard
 - `/recap` listening stats

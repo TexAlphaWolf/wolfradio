@@ -27,6 +27,7 @@ export function fromLibrary(song: LibrarySong, artwork: string | null = null, li
     artist: song.artist,
     durationMs: song.durationMs,
     artworkUrl: artwork,
+    coverId: song.coverArt,
     link,
   };
 }

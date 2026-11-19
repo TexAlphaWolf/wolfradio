@@ -70,6 +70,13 @@ export const config = {
     tokenKey: str("TOKEN_ENCRYPTION_KEY"),
   },
 
+  /** WolfRadio V2: Discord Activity (web app inside the voice channel), served by the bot itself. */
+  activity: {
+    enabled: bool("ENABLE_ACTIVITY", false),
+    clientSecret: str("DISCORD_CLIENT_SECRET"),
+    port: num("ACTIVITY_PORT", 8080),
+  },
+
   defaultVolume: num("DEFAULT_VOLUME", 60),
   maxQueuePerUser: num("MAX_QUEUE_PER_USER", 15),
   cooldownMs: num("COMMAND_COOLDOWN_SECONDS", 3) * 1000,
@@ -92,6 +99,9 @@ export function validateConfig(): string[] {
   }
   if (!config.previews.enabled && !config.jamendo.enabled && !config.library.enabled && !config.radio.enabled) {
     problems.push("Every source is disabled — enable at least one of previews, Jamendo, library or radio");
+  }
+  if (config.activity.enabled && !config.activity.clientSecret) {
+    problems.push("ENABLE_ACTIVITY is on but DISCORD_CLIENT_SECRET is empty (Developer Portal → OAuth2 → Client Secret)");
   }
   if (config.spotify.enabled) {
     if (!config.spotify.clientId || !config.spotify.clientSecret) {

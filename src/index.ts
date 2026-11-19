@@ -5,6 +5,7 @@ import { registerRequestChannel } from "./interactions/requests.js";
 import { destroyPlayer, IDLE_ACTIVITY, registerPlayerEvents } from "./music/events.js";
 import { addInstance, allInstances, type Instance } from "./music/instances.js";
 import { createLavalink } from "./music/lavalink.js";
+import { startActivityServer } from "./activity/server.js";
 import { startCallbackServer } from "./spotify/callbackServer.js";
 import { pingLibrary } from "./sources/navidrome.js";
 import { flushStore, loadStore } from "./store.js";
@@ -90,6 +91,7 @@ if (config.library.enabled) {
   })();
 }
 const callbackServer = config.spotify.enabled ? startCallbackServer() : null;
+const activityServer = config.activity.enabled ? startActivityServer() : null;
 
 const features = [
   config.library.enabled && "library",
@@ -98,6 +100,7 @@ const features = [
   config.radio.enabled && "radio",
   config.lyrics.enabled && "lyrics",
   config.spotify.enabled && "spotify-party",
+  config.activity.enabled && "activity",
 ].filter(Boolean);
 console.log(`[sources] enabled: ${features.join(", ")}`);
 
@@ -106,6 +109,7 @@ async function shutdown(signal: string): Promise<void> {
   try {
     flushStore();
     callbackServer?.close();
+    activityServer?.close();
     const players = allInstances().flatMap((i) => [...i.manager.players.values()]);
     await Promise.allSettled(players.map((p) => destroyPlayer(p, "bot shutting down")));
   } finally {

@@ -4,12 +4,9 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import { resolveVoiceChannel } from "../interactions/picker.js";
-import { enableAutoplay } from "../music/autoplay.js";
 import { COLOR_OK, simpleEmbed } from "../music/embeds.js";
-import { isDJ } from "../music/permissions.js";
-import { enqueue, QueueLimitError, UserError } from "../music/player.js";
-import { fromLibrary } from "../sources/catalog.js";
-import { libraryGenres, randomLibrarySongs } from "../sources/navidrome.js";
+import { queueRandom } from "../music/randomPlay.js";
+import { libraryGenres } from "../sources/navidrome.js";
 import { truncate } from "../util/text.js";
 import type { Command } from "./types.js";
 
@@ -34,42 +31,9 @@ export const random: Command = {
     const endless = interaction.options.getBoolean("endless") ?? false;
 
     const voice = resolveVoiceChannel(interaction.guild, interaction.member);
-    if (endless && !isDJ(interaction.member)) throw new UserError("Only DJs can start the endless shuffle.");
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-    const filter = { genre, fromYear, toYear };
-    const songs = await randomLibrarySongs(count, filter);
-    if (songs.length === 0) {
-      throw new UserError(genre || fromYear || toYear ? "No songs in your library match those filters." : "Your library is empty.");
-    }
-
-    const ctx = {
-      guild: interaction.guild,
-      member: interaction.member,
-      voiceChannelId: voice.id,
-      textChannelId: voice.id,
-    };
-    let added = 0;
-    let limitHit = false;
-    let lastPlayer = null;
-    for (const song of songs) {
-      try {
-        const { player } = await enqueue(ctx, fromLibrary(song));
-        lastPlayer = player;
-        added++;
-      } catch (err) {
-        if (err instanceof QueueLimitError) {
-          limitHit = true;
-          break;
-        }
-        if (added === 0) throw err; // the first one failing means something is wrong (busy bots, Lavalink down…)
-      }
-    }
-    if (added === 0) throw new UserError("Couldn't queue any song from your library.");
-
-    if (endless && lastPlayer) {
-      enableAutoplay(lastPlayer, filter, { id: interaction.user.id, username: interaction.user.username }, songs.map((s) => s.id));
-    }
+    const ctx = { guild: interaction.guild, member: interaction.member, voiceChannelId: voice.id, textChannelId: voice.id };
+    const { added, limitHit } = await queueRandom(ctx, { count, filter: { genre, fromYear, toYear }, endless });
 
     const filters = [genre && `genre **${truncate(genre, 40)}**`, fromYear && `from ${fromYear}`, toYear && `to ${toYear}`]
       .filter(Boolean)

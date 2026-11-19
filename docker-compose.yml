@@ -20,6 +20,8 @@ services:
     # Spotify OAuth callback — bound to this computer only
     ports:
       - "127.0.0.1:${SPOTIFY_CALLBACK_PORT:-8888}:${SPOTIFY_CALLBACK_PORT:-8888}"
+      # Activity web app + API (only this computer; Discord reaches it through the tunnel below)
+      - "127.0.0.1:${ACTIVITY_PORT:-8080}:${ACTIVITY_PORT:-8080}"
     # The bot keeps retrying until Lavalink is up, so no health check is needed
     depends_on:
       - lavalink
@@ -37,3 +39,15 @@ services:
     volumes:
       - ./navidrome-data:/data
       - ${MUSIC_DIR:-./music}:/music:ro
+
+  # WolfRadio V2 (Discord Activity): public HTTPS address for Discord's URL Mapping.
+  # Start with COMPOSE_PROFILES=activity (comma-separated with others), then read the address with
+  #   docker compose logs tunnel
+  # A quick tunnel gets a NEW *.trycloudflare.com address every time it restarts.
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    profiles: ["activity"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://wolfradio:${ACTIVITY_PORT:-8080}
+    depends_on:
+      - wolfradio

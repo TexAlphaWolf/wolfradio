@@ -14,6 +14,7 @@ export interface LibrarySong {
   album: string;
   durationMs: number;
   isrc: string[];
+  coverArt: string | null;
 }
 
 interface RawSong {
@@ -23,6 +24,7 @@ interface RawSong {
   album?: string;
   duration?: number;
   isrc?: string | string[];
+  coverArt?: string;
 }
 
 interface SubsonicResponse<T> {
@@ -62,6 +64,7 @@ export async function searchLibrary(query: string, count = 10): Promise<LibraryS
     album: s.album ?? "",
     durationMs: (s.duration ?? 0) * 1000,
     isrc: Array.isArray(s.isrc) ? s.isrc : s.isrc ? [s.isrc] : [],
+    coverArt: s.coverArt ?? null,
   }));
 }
 
@@ -101,6 +104,7 @@ export async function randomLibrarySongs(count: number, filter: RandomFilter = {
     album: s.album ?? "",
     durationMs: (s.duration ?? 0) * 1000,
     isrc: Array.isArray(s.isrc) ? s.isrc : s.isrc ? [s.isrc] : [],
+    coverArt: s.coverArt ?? null,
   }));
 }
 
@@ -119,4 +123,9 @@ export async function libraryGenres(): Promise<{ name: string; songs: number }[]
     .sort((a, b) => b.songs - a.songs);
   genresCache = { at: Date.now(), list };
   return list;
+}
+
+/** Cover image from Navidrome (raw bytes) — only the Activity's art proxy calls this. */
+export async function fetchCoverArt(id: string, size = 600): Promise<Response> {
+  return fetch(endpoint("getCoverArt", { id, size: String(size) }), { signal: AbortSignal.timeout(8000) });
 }

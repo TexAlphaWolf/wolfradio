@@ -9,6 +9,8 @@ export interface Playable {
   artist: string;
   durationMs?: number | null;
   artworkUrl?: string | null;
+  /** Navidrome cover id (library tracks): the Activity loads it through the bot's art proxy. */
+  coverId?: string | null;
   /** Public page for the song or station, safe to show. */
   link?: string | null;
   license?: { name: string; url: string } | null;
